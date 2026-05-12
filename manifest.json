@@ -3,9 +3,10 @@
       "default_icon": {
          "128": "icons/icon128.png",
          "16": "icons/icon16.png",
+         "32": "icons/icon32.png",
          "48": "icons/icon48.png"
       },
-      "default_title": "点击或按 Alt+Shift+D 启动 Liaison"
+      "default_title": "点击或按 Alt+Shift+D 启动"
    },
    "background": {
       "service_worker": "liaison.js",
@@ -25,14 +26,15 @@
    "icons": {
       "128": "icons/icon128.png",
       "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
       "48": "icons/icon48.png"
    },
    "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsjFN6e9W/7JA8RhjiFDWHLAXb6f0+Hs/Ynq8JKY4waZKuaqYUrx8Wx5R0eNsFd8LoNZjsdGnZ3ELFEfkmj9WfdLibYDnbXUUIkBOgewRi/9dslGQzRJvJ92kzmzSeAXjHer87+V2GYKE7tJT6a94PKSytcmqAz+3fadmXklajaj5EK4U3dD2iPS46KzEybmtZ464V0zwEunvInZe1rgMxgRHJSvimk1rVfBrZz8nFWsAXelTLR6WXxsVTcLwYNC5ZDMaOMx7r/frFDIKByh7LeE8XqieuPbT00xaUDrtEwxkn6wV9fqKD0vcddJC/G4VXLeZAj/GETPthW3q0we7NwIDAQAB",
    "manifest_version": 3,
-   "name": "Liaison - AI 编程定位、网页样式编辑与批注",
+   "name": "web to ai - AI 编程定位、网页样式编辑与批注",
    "permissions": [ "activeTab", "contextMenus", "scripting", "storage" ],
    "update_url": "https://clients2.google.com/service/update2/crx",
-   "version": "1.0.4",
+   "version": "1.0",
    "web_accessible_resources": [ {
       "matches": [ "\u003Call_urls>" ],
       "resources": [ "toolbar/*" ]
