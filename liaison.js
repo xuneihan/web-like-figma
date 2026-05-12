@@ -1,15 +1,18 @@
 import {gimmeToggle} from "./contextmenu/launcher.js"
 import {getColorMode} from "./contextmenu/colormode.js"
 import {getColorScheme} from "./contextmenu/colorscheme.js"
+import {platform} from "./contextmenu/platform.js"
 
 const state = {
   loaded:   {},
   injected: {},
 }
 
-var platform = typeof browser === 'undefined'
-  ? chrome
-  : browser
+platform.tabs.onUpdated.addListener((tabId) => {
+  if (state.loaded[tabId]) {
+    state.loaded[tabId] = false
+  }
+})
 
 const toggleIn = async ({id:tab_id}) => {
   // toggle out: it's currently loaded and injected
@@ -71,10 +74,6 @@ const toggleIn = async ({id:tab_id}) => {
     }
   }
 
-  platform.tabs.onUpdated.addListener(function(tabId) {
-    if (tabId === tab_id)
-      state.loaded[tabId] = false
-  })
 }
 
 gimmeToggle(toggleIn)

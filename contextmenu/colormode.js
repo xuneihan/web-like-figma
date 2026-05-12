@@ -1,7 +1,9 @@
-const storagekey = 'liaison-color-mode'
-const defaultcolormode = 'hex'
+import {platform} from './platform.js'
 
-const color_options = [
+const storageKey = 'liaison-color-mode'
+const defaultColorMode = 'hex'
+
+const colorOptions = [
   'hsl',
   'hex',
   'rgb',
@@ -14,69 +16,54 @@ const color_options = [
   // 'as authored',
 ]
 
-const colormodestate = {
-  mode: defaultcolormode
+const colorModeState = {
+  mode: defaultColorMode
 }
 
-var platform = typeof browser === 'undefined'
-  ? chrome
-  : browser
+const sendColorMode = async () => {
+  const tabs = await platform.tabs.query({active: true, currentWindow: true})
+  const tab = tabs ? tabs[0] : undefined
+  if (!tab) return
 
-const sendColorMode = () => {
-  platform.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    if (platform.runtime.lastError) return;
-    const tab = tabs ? tabs[0] : undefined;
-    if (tab) {
-      platform.tabs.sendMessage(tab.id, {
-        action: 'COLOR_MODE',
-        params: {mode:colormodestate.mode},
-      }).catch(() => {})
-    }
-  })
+  try {
+    await platform.tabs.sendMessage(tab.id, {
+      action: 'COLOR_MODE',
+      params: {mode: colorModeState.mode},
+    })
+  } catch (_) {}
 }
 
-export const getColorMode = () => {
-  platform.storage.sync.get([storagekey], value => {
-    if (platform.runtime.lastError) {
-      console.warn('getColorMode error:', platform.runtime.lastError)
-      return
+export const getColorMode = async () => {
+  try {
+    const value = await platform.storage.sync.get([storageKey])
+    let foundValue = value ? value[storageKey] : undefined
+
+    if (!foundValue) {
+      foundValue = defaultColorMode
+      await platform.storage.sync.set({[storageKey]: defaultColorMode})
     }
 
-    let found_value = value ? value[storagekey] : undefined
-
-    const is_default = found_value
-      ? found_value === defaultcolormode
-      : false
-
-    // first run
-    if (!found_value && !is_default) {
-      found_value = defaultcolormode
-      platform.storage.sync.set({[storagekey]: defaultcolormode})
+    if (foundValue === 'hsla') {
+      foundValue = 'hsl'
+      await platform.storage.sync.set({[storageKey]: foundValue})
+    }
+    if (foundValue === 'rgba') {
+      foundValue = 'rgb'
+      await platform.storage.sync.set({[storageKey]: foundValue})
     }
 
-    // migrate old choices
-    if (found_value === 'hsla') {
-      found_value = 'hsl'
-      platform.storage.sync.set({[storagekey]: found_value})
-    }
-    if (found_value === 'rgba') {
-      found_value = 'rgb'
-      platform.storage.sync.set({[storagekey]: found_value})
-    }
-
-    // update checked state of color contextmenu radio list
-    color_options.forEach(option => {
+    colorOptions.forEach(option => {
       platform.contextMenus.update(option, {
-        checked: option === found_value
+        checked: option === foundValue
       }, () => { void platform.runtime.lastError })
     })
 
-    // send liaison user preference
-    colormodestate.mode = found_value
-    sendColorMode()
-
-    return found_value
-  })
+    colorModeState.mode = foundValue
+    await sendColorMode()
+    return foundValue
+  } catch (e) {
+    console.warn('getColorMode error:', e)
+  }
 }
 
 // load synced color choice on load
@@ -89,7 +76,7 @@ platform.runtime.onInstalled.addListener(() => {
     contexts: ['all'],
   })
 
-  color_options.forEach(option => {
+  colorOptions.forEach(option => {
     platform.contextMenus.create({
       id:       option,
       parentId: 'color-mode',
@@ -104,8 +91,8 @@ platform.runtime.onInstalled.addListener(() => {
 platform.contextMenus.onClicked.addListener(({parentMenuItemId, menuItemId}, tab) => {
   if (parentMenuItemId !== 'color-mode') return
 
-  platform.storage.sync.set({[storagekey]: menuItemId})
-  colormodestate.mode = menuItemId
+  platform.storage.sync.set({[storageKey]: menuItemId})
+  colorModeState.mode = menuItemId
 
   sendColorMode()
 })

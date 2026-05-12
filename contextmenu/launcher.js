@@ -1,6 +1,4 @@
-var platform = typeof browser === 'undefined'
-  ? chrome
-  : browser
+import {platform} from './platform.js'
 
 var toggleIt
 
@@ -18,6 +16,6 @@ platform.runtime.onInstalled.addListener(() => {
 })
 
 platform.contextMenus.onClicked.addListener(({menuItemId}, tab) => {
-  if (menuItemId === 'launcher')
+  if (menuItemId === 'launcher' && toggleIt)
     toggleIt(tab)
 })

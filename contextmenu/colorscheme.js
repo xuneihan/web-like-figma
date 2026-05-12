@@ -1,61 +1,53 @@
-const schemestoragekey = 'liaison-color-scheme';
-const defaultcolorscheme = 'auto';
+import {platform} from './platform.js'
 
-const scheme_option = [
+const schemeStorageKey = 'liaison-color-scheme'
+const defaultColorScheme = 'auto'
+
+const schemeOptions = [
   'auto',
   'light',
   'dark',
 ]
 
-const colorschemestate = {
-  mode: defaultcolorscheme
+const colorSchemeState = {
+  mode: defaultColorScheme
 }
 
-var platform = typeof browser === 'undefined'
-  ? chrome
-  : browser
+const sendColorScheme = async () => {
+  const tabs = await platform.tabs.query({active: true, currentWindow: true})
+  const tab = tabs ? tabs[0] : undefined
+  if (!tab) return
 
-const sendColorScheme = () => {
-  platform.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    if (platform.runtime.lastError) return;
-    const tab = tabs ? tabs[0] : undefined;
-    if (tab) {
-      platform.tabs.sendMessage(tab.id, {
-        action: 'COLOR_SCHEME',
-        params: {mode:colorschemestate.mode},
-      }).catch(() => {})
-    }
-  })
+  try {
+    await platform.tabs.sendMessage(tab.id, {
+      action: 'COLOR_SCHEME',
+      params: {mode: colorSchemeState.mode},
+    })
+  } catch (_) {}
 }
 
-export const getColorScheme = () => {
-  platform.storage.sync.get([schemestoragekey], value => {
-    if (platform.runtime.lastError) {
-      console.warn('getColorScheme error:', platform.runtime.lastError)
-      return
+export const getColorScheme = async () => {
+  try {
+    const value = await platform.storage.sync.get([schemeStorageKey])
+    let foundValue = value ? value[schemeStorageKey] : undefined
+
+    if (!foundValue) {
+      foundValue = defaultColorScheme
+      await platform.storage.sync.set({[schemeStorageKey]: defaultColorScheme})
     }
 
-    let found_value = value ? value[schemestoragekey] : undefined;
-
-    // first run
-    if (!found_value) {
-      found_value = defaultcolorscheme;
-      platform.storage.sync.set({ [schemestoragekey]: defaultcolorscheme });
-    }
-
-    // update checked state of scheme contextmenu radio list
-    scheme_option.forEach(option => {
+    schemeOptions.forEach(option => {
       platform.contextMenus.update(option, {
-        checked: option === found_value
+        checked: option === foundValue
       }, () => { void platform.runtime.lastError })
     })
 
-    // send liaison user preference
-    colorschemestate.mode = found_value
-    sendColorScheme()
-
-    return found_value
-  })
+    colorSchemeState.mode = foundValue
+    await sendColorScheme()
+    return foundValue
+  } catch (e) {
+    console.warn('getColorScheme error:', e)
+  }
 }
 
 // load synced scheme choice on load
@@ -68,7 +60,7 @@ platform.runtime.onInstalled.addListener(() => {
     contexts: ['all'],
   })
 
-  scheme_option.forEach(option => {
+  schemeOptions.forEach(option => {
     platform.contextMenus.create({
       id:       option,
       parentId: 'color-scheme',
@@ -83,8 +75,8 @@ platform.runtime.onInstalled.addListener(() => {
 platform.contextMenus.onClicked.addListener(({parentMenuItemId, menuItemId}, tab) => {
   if (parentMenuItemId !== 'color-scheme') return
 
-  platform.storage.sync.set({[schemestoragekey]: menuItemId})
-  colorschemestate.mode = menuItemId
+  platform.storage.sync.set({[schemeStorageKey]: menuItemId})
+  colorSchemeState.mode = menuItemId
 
   sendColorScheme()
 })
